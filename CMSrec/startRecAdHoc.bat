@@ -1,0 +1,1 @@
+cd c:\CMSrec&&venv\Scripts\activate.bat&&python startRecAdHoc.py
