@@ -1,1 +1,0 @@
-cd c:\codecH323Config&&venv\Scripts\activate.bat&&python codecH323Config.py
