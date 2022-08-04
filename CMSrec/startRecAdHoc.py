@@ -46,7 +46,7 @@ def start_rec(fqdn):
                 else:
                     url_put_full = url_put + coSpace['@id']
                 try:
-                    response = requests.get(url_put_full, auth=HTTPBasicAuth('apiadmin', 'Cisc0Api@1'),
+                    response = requests.get(url_put_full, auth=HTTPBasicAuth('apiadmin', '**********'),
                                             verify=False)
                     doc_coSpace = xmltodict.parse(response.text)
                     # Проверяем есть ли среди индексов конкретного пространства (coSpace) индекс "callProfile"
@@ -56,11 +56,11 @@ def start_rec(fqdn):
                         coSpaceIdx.append(key)
                     '''# Если нет, то присваиваем "callProfile", т.е. включаем автозапись
                     if profile not in coSpaceIdx:
-                        response = requests.put(url_put_full, auth=HTTPBasicAuth('apiadmin', 'Cisc0Api@1'),
+                        response = requests.put(url_put_full, auth=HTTPBasicAuth('apiadmin', '**********'),
                                                 verify=False, data={'callProfile': callProfile_auto})'''
                     # Если нет, то присваиваем "callProfile", т.е. включаем ручную запись
                     if profile not in coSpaceIdx:
-                        response = requests.put(url_put_full, auth=HTTPBasicAuth('apiadmin', 'Cisc0Api@1'),
+                        response = requests.put(url_put_full, auth=HTTPBasicAuth('apiadmin', '**********'),
                                                 verify=False, data={'callProfile': callProfile_man})
                         response.raise_for_status()
                         print('Запись включена!')
