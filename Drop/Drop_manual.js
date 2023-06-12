@@ -1,25 +1,25 @@
 /**
- * Бета-версия. Макрос исправляет глюк: cбрасывает нежелательную презентацию во время старта H323 звонка, в случае, когда имеет место Interworking.
- * Автор: Юзов Евгений Борисович, ООО "Центр", 12.01.2022.
- */
+В *В Р‘РµС‚Р°-РІРµСЂСЃРёСЏ.В РњР°РєСЂРѕСЃВ РёСЃРїСЂР°РІР»СЏРµС‚В РіР»СЋРє:В cР±СЂР°СЃС‹РІР°РµС‚В РЅРµР¶РµР»Р°С‚РµР»СЊРЅСѓСЋВ РїСЂРµР·РµРЅС‚Р°С†РёСЋВ РІРѕВ РІСЂРµРјСЏВ СЃС‚Р°СЂС‚Р°В H323В Р·РІРѕРЅРєР°,В РІВ СЃР»СѓС‡Р°Рµ,В РєРѕРіРґР°В РёРјРµРµС‚В РјРµСЃС‚РѕВ Interworking.
+В *В РђРІС‚РѕСЂ:В Р®Р·РѕРІВ Р•РІРіРµРЅРёР№В Р‘РѕСЂРёСЃРѕРІРёС‡,В РћРћРћВ "Р¦РµРЅС‚СЂ",В 12.01.2022.
+В */
 
-import xapi from 'xapi';
+importВ xapiВ fromВ 'xapi';
 
-const DEBUG = true;
-const CORRECT_BUTTON_PANELID = 'correctButton' // ID кнопки "Коррекция экрана"
+constВ DEBUGВ =В true;
+constВ CORRECT_BUTTON_PANELIDВ =В 'correctButton'В //В IDВ РєРЅРѕРїРєРёВ "РљРѕСЂСЂРµРєС†РёСЏВ СЌРєСЂР°РЅР°"
 
 /**
- * Старт локальной презентации, источник - видео с камеры. Потом дожидаемся, пока презентация установится, и сразу же её сбрасываем.
- */
-async function StartStopPres() {
-  await xapi.Command.Presentation.Start({Instance: '6', PresentationSource: '1', SendingMode: 'LocalRemote'})
-  .then(await xapi.Command.Presentation.Stop({Instance: '6', PresentationSource: '1'}))
-  .catch(console.log);
-  if (DEBUG) {console.log ('Сработал сброс презентации!')}
+В *В РЎС‚Р°СЂС‚В Р»РѕРєР°Р»СЊРЅРѕР№В РїСЂРµР·РµРЅС‚Р°С†РёРё,В РёСЃС‚РѕС‡РЅРёРєВ -В РІРёРґРµРѕВ СЃВ РєР°РјРµСЂС‹.В РџРѕС‚РѕРјВ РґРѕР¶РёРґР°РµРјСЃСЏ,В РїРѕРєР°В РїСЂРµР·РµРЅС‚Р°С†РёСЏВ СѓСЃС‚Р°РЅРѕРІРёС‚СЃСЏ,В РёВ СЃСЂР°Р·СѓВ Р¶РµВ РµС‘В СЃР±СЂР°СЃС‹РІР°РµРј.
+В */
+asyncВ functionВ StartStopPres()В {
+В В awaitВ xapi.Command.Presentation.Start({Instance:В '6',В PresentationSource:В '1',В SendingMode:В 'LocalRemote'})
+В В .then(awaitВ xapi.Command.Presentation.Stop({Instance:В '6',В PresentationSource:В '1'}))
+В В .catch(console.log);
+В В ifВ (DEBUG)В {console.logВ ('РЎСЂР°Р±РѕС‚Р°Р»В СЃР±СЂРѕСЃВ РїСЂРµР·РµРЅС‚Р°С†РёРё!')}
 }
 
-xapi.event.on('UserInterface Extensions Panel Clicked', (event) => {
-  if(event.PanelId === CORRECT_BUTTON_PANELID) {StartStopPres();}
-  if (DEBUG) {console.log('Correct screen button clicked!')}
+xapi.event.on('UserInterfaceВ ExtensionsВ PanelВ Clicked',В (event)В =>В {
+В В if(event.PanelIdВ ===В CORRECT_BUTTON_PANELID)В {StartStopPres();}
+В В ifВ (DEBUG)В {console.log('CorrectВ screenВ buttonВ clicked!')}
 });
 
