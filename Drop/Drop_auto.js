@@ -1,87 +1,87 @@
 /**
- * Бета-версия. Макрос исправляет глюк: cбрасывает нежелательную презентацию во время старта H323 звонка, в случае, когда имеет место Interworking.
- * Автор: Юзов Евгений Борисович, ООО "Центр", 12.01.2022.
- */
+В *В Р‘РµС‚Р°-РІРµСЂСЃРёСЏ.В РњР°РєСЂРѕСЃВ РёСЃРїСЂР°РІР»СЏРµС‚В РіР»СЋРє:В cР±СЂР°СЃС‹РІР°РµС‚В РЅРµР¶РµР»Р°С‚РµР»СЊРЅСѓСЋВ РїСЂРµР·РµРЅС‚Р°С†РёСЋВ РІРѕВ РІСЂРµРјСЏВ СЃС‚Р°СЂС‚Р°В H323В Р·РІРѕРЅРєР°,В РІВ СЃР»СѓС‡Р°Рµ,В РєРѕРіРґР°В РёРјРµРµС‚В РјРµСЃС‚РѕВ Interworking.
+В *В РђРІС‚РѕСЂ:В Р®Р·РѕРІВ Р•РІРіРµРЅРёР№В Р‘РѕСЂРёСЃРѕРІРёС‡,В РћРћРћВ "Р¦РµРЅС‚СЂ",В 12.01.2022.
+В */
 
-import xapi from 'xapi';
+importВ xapiВ fromВ 'xapi';
 
-const DEBUG = true;
-const timeout = 10; // Количество секунд работы макроса после старта звонка, сравнивается с Call.Duration. Полезную презентацию можно подать после timeout секунд!
-const index = 1; // Макс. значение счётчика, чтобы не попасть в бесконечный цикл.
-const sleepTime = 2000; // sleepTime миллисекунд паузы после события изменения компоновки (ActiveLayout) и перед сбросом презентации.
+constВ DEBUGВ =В true;
+constВ timeoutВ =В 10;В //В РљРѕР»РёС‡РµСЃС‚РІРѕВ СЃРµРєСѓРЅРґВ СЂР°Р±РѕС‚С‹В РјР°РєСЂРѕСЃР°В РїРѕСЃР»РµВ СЃС‚Р°СЂС‚Р°В Р·РІРѕРЅРєР°,В СЃСЂР°РІРЅРёРІР°РµС‚СЃСЏВ СЃВ Call.Duration.В РџРѕР»РµР·РЅСѓСЋВ РїСЂРµР·РµРЅС‚Р°С†РёСЋВ РјРѕР¶РЅРѕВ РїРѕРґР°С‚СЊВ РїРѕСЃР»РµВ timeoutВ СЃРµРєСѓРЅРґ!
+constВ indexВ =В 1;В //В РњР°РєСЃ.В Р·РЅР°С‡РµРЅРёРµВ СЃС‡С‘С‚С‡РёРєР°,В С‡С‚РѕР±С‹В РЅРµВ РїРѕРїР°СЃС‚СЊВ РІВ Р±РµСЃРєРѕРЅРµС‡РЅС‹Р№В С†РёРєР».
+constВ sleepTimeВ =В 2000;В //В sleepTimeВ РјРёР»Р»РёСЃРµРєСѓРЅРґВ РїР°СѓР·С‹В РїРѕСЃР»РµВ СЃРѕР±С‹С‚РёСЏВ РёР·РјРµРЅРµРЅРёСЏВ РєРѕРјРїРѕРЅРѕРІРєРёВ (ActiveLayout)В РёВ РїРµСЂРµРґВ СЃР±СЂРѕСЃРѕРјВ РїСЂРµР·РµРЅС‚Р°С†РёРё.
 
 /**
- * Держит паузу заданное количество миллисекунд.
- */
-const sleep = (timeout) => new Promise((resolve) => {
-  setTimeout(resolve, timeout);
+В *В Р”РµСЂР¶РёС‚В РїР°СѓР·СѓВ Р·Р°РґР°РЅРЅРѕРµВ РєРѕР»РёС‡РµСЃС‚РІРѕВ РјРёР»Р»РёСЃРµРєСѓРЅРґ.
+В */
+constВ sleepВ =В (timeout)В =>В newВ Promise((resolve)В =>В {
+В В setTimeout(resolve,В timeout);
 });
 
 /**
- * Старт локальной презентации, источник - видео с камеры. Потом дожидаемся, пока презентация установится, и сразу же её сбрасываем.
- */
-async function StartStopPres() {
-  await xapi.Command.Presentation.Start({Instance: '6', PresentationSource: '1', SendingMode: 'LocalRemote'})
-  .then(await xapi.Command.Presentation.Stop({Instance: '6', PresentationSource: '1'}))
-  .catch(console.log);
-  if (DEBUG) {console.log ('Сработал сброс презентации!')}
+В *В РЎС‚Р°СЂС‚В Р»РѕРєР°Р»СЊРЅРѕР№В РїСЂРµР·РµРЅС‚Р°С†РёРё,В РёСЃС‚РѕС‡РЅРёРєВ -В РІРёРґРµРѕВ СЃВ РєР°РјРµСЂС‹.В РџРѕС‚РѕРјВ РґРѕР¶РёРґР°РµРјСЃСЏ,В РїРѕРєР°В РїСЂРµР·РµРЅС‚Р°С†РёСЏВ СѓСЃС‚Р°РЅРѕРІРёС‚СЃСЏ,В РёВ СЃСЂР°Р·СѓВ Р¶РµВ РµС‘В СЃР±СЂР°СЃС‹РІР°РµРј.
+В */
+asyncВ functionВ StartStopPres()В {
+В В awaitВ xapi.Command.Presentation.Start({Instance:В '6',В PresentationSource:В '1',В SendingMode:В 'LocalRemote'})
+В В .then(awaitВ xapi.Command.Presentation.Stop({Instance:В '6',В PresentationSource:В '1'}))
+В В .catch(console.log);
+В В ifВ (DEBUG)В {console.logВ ('РЎСЂР°Р±РѕС‚Р°Р»В СЃР±СЂРѕСЃВ РїСЂРµР·РµРЅС‚Р°С†РёРё!')}
 }
 
 /**
- * Срабатывает только при количестве активных звонков 1, и только в течение timeout секунд после установления звонка. 
- * Потом в течение всего звонка сбрасывать презентации не нужно, т.к. они несут полезную нагрузку!
- * Если на кодеке терминируется несколько звонков, сброс презентации тоже не работает.
- */
-async function CorrectScreen() {
-  Promise.all([
-  xapi.Status.SystemUnit.State.NumberOfActiveCalls.get(),
-  xapi.Status.Call.Duration.get(),
-  xapi.Status.Call.RemoteNumber.get(),
-  xapi.Status.Video.Layout.CurrentLayouts.ActiveLayout.get(),
-  xapi.Status.Call.Direction.get()
-  ])
-  .then(async([callCount, callDuration, remoteNumber, activeLayout, callDirection]) => {
-    let i = 0; // Счётчик повторных попыток
-    // Переменная для доп. условия: при вх. звонке - на номер звонящего (т.е. откуда звонят), например, iwf@10.100.40.11;
-    // при исходящем звонке - на номер назначения (куда звонят), например, 217.198.12.14@ip.
-    let numCondition = -1; 
-    // Поиск нужной подстроки в номере звонящего.
-    const pos = [remoteNumber.indexOf('@10.100.40.38'), remoteNumber.indexOf('@cms.taif.ru'), remoteNumber.indexOf('@10.100.40.11'), 
-    remoteNumber.indexOf('@10.100.40.12'), remoteNumber.indexOf('@cucm.taif.ru'), remoteNumber.indexOf('@taif.loc'), 
-    remoteNumber.indexOf('@taif.ru'), remoteNumber.indexOf('iwf@'), remoteNumber.indexOf('@ip')];
-    if (DEBUG) {
-      console.log('callDirection: ' + callDirection);
-      console.log('callDuration: ' + callDuration);
-      console.log('callCount: ' + callCount);
-      console.log('remoteNumber: ' + remoteNumber);
-      console.log('activeLayout: ' + activeLayout);
-      // console.log('remoteNumber @10.100.40.38 domain position is: ' + pos[0]);
-      // console.log('remoteNumber @cms.taif.ru domain position is: ' + pos[1]);
-      // console.log('remoteNumber @10.100.40.11 domain position is: ' + pos[2]);
-      // console.log('remoteNumber @10.100.40.12 domain position is: ' + pos[3]);
-      // console.log('remoteNumber @cucm.taif.ru domain position is: ' + pos[4]);
-      // console.log('remoteNumber @taif.loc domain position is: ' + pos[5]);
-      // console.log('remoteNumber @taif.ru domain position is: ' + pos[6]);
-      console.log('remoteNumber iwf@ uri position is: ' + pos[7]);
-      console.log('remoteNumber @ip domain position is: ' + pos[8]);
-    }  
-    if (callDirection == 'Incoming') {numCondition = pos[7]}
-    if (callDirection == 'Outgoing') {numCondition = pos[8]} // т.е. сброс срабатывает только при исходящем звонке на  ip-адрес, т.е. на номер, где присутствует @ip!
-    if (callCount == 1 && callDuration <= timeout && numCondition !== -1) {
-      // While здесь потому, что иногда с первого раза не срабатывает. Программа ждёт ещё sleepTime секунд и повторяет сброс презентации.
-      while (i <= index) {
-        await sleep(sleepTime); // Ждём sleepTime секунд после события изменения компоновки (ActiveLayout), т.к. сразу может не сработать.
-        await xapi.Status.Video.Layout.CurrentLayouts.ActiveLayout.get()
-        .then ((activeLayout) => {if (activeLayout !== '') {StartStopPres();}})     
-        i++;
-      }
-    }
-  })
-  .catch(console.log);
+В *В РЎСЂР°Р±Р°С‚С‹РІР°РµС‚В С‚РѕР»СЊРєРѕВ РїСЂРёВ РєРѕР»РёС‡РµСЃС‚РІРµВ Р°РєС‚РёРІРЅС‹С…В Р·РІРѕРЅРєРѕРІВ 1,В РёВ С‚РѕР»СЊРєРѕВ РІВ С‚РµС‡РµРЅРёРµВ timeoutВ СЃРµРєСѓРЅРґВ РїРѕСЃР»РµВ СѓСЃС‚Р°РЅРѕРІР»РµРЅРёСЏВ Р·РІРѕРЅРєР°.В 
+В *В РџРѕС‚РѕРјВ РІВ С‚РµС‡РµРЅРёРµВ РІСЃРµРіРѕВ Р·РІРѕРЅРєР°В СЃР±СЂР°СЃС‹РІР°С‚СЊВ РїСЂРµР·РµРЅС‚Р°С†РёРёВ РЅРµВ РЅСѓР¶РЅРѕ,В С‚.Рє.В РѕРЅРёВ РЅРµСЃСѓС‚В РїРѕР»РµР·РЅСѓСЋВ РЅР°РіСЂСѓР·РєСѓ!
+В *В Р•СЃР»РёВ РЅР°В РєРѕРґРµРєРµВ С‚РµСЂРјРёРЅРёСЂСѓРµС‚СЃСЏВ РЅРµСЃРєРѕР»СЊРєРѕВ Р·РІРѕРЅРєРѕРІ,В СЃР±СЂРѕСЃВ РїСЂРµР·РµРЅС‚Р°С†РёРёВ С‚РѕР¶РµВ РЅРµВ СЂР°Р±РѕС‚Р°РµС‚.
+В */
+asyncВ functionВ CorrectScreen()В {
+В В Promise.all([
+В В xapi.Status.SystemUnit.State.NumberOfActiveCalls.get(),
+В В xapi.Status.Call.Duration.get(),
+В В xapi.Status.Call.RemoteNumber.get(),
+В В xapi.Status.Video.Layout.CurrentLayouts.ActiveLayout.get(),
+В В xapi.Status.Call.Direction.get()
+В В ])
+В В .then(async([callCount,В callDuration,В remoteNumber,В activeLayout,В callDirection])В =>В {
+В В В В letВ iВ =В 0;В //В РЎС‡С‘С‚С‡РёРєВ РїРѕРІС‚РѕСЂРЅС‹С…В РїРѕРїС‹С‚РѕРє
+В В В В //В РџРµСЂРµРјРµРЅРЅР°СЏВ РґР»СЏВ РґРѕРї.В СѓСЃР»РѕРІРёСЏ:В РїСЂРёВ РІС….В Р·РІРѕРЅРєРµВ -В РЅР°В РЅРѕРјРµСЂВ Р·РІРѕРЅСЏС‰РµРіРѕВ (С‚.Рµ.В РѕС‚РєСѓРґР°В Р·РІРѕРЅСЏС‚),В РЅР°РїСЂРёРјРµСЂ,В iwf@10.100.40.11;
+В В В В //В РїСЂРёВ РёСЃС…РѕРґСЏС‰РµРјВ Р·РІРѕРЅРєРµВ -В РЅР°В РЅРѕРјРµСЂВ РЅР°Р·РЅР°С‡РµРЅРёСЏВ (РєСѓРґР°В Р·РІРѕРЅСЏС‚),В РЅР°РїСЂРёРјРµСЂ,В 217.198.12.14@ip.
+В В В В letВ numConditionВ =В -1;В 
+В В В В //В РџРѕРёСЃРєВ РЅСѓР¶РЅРѕР№В РїРѕРґСЃС‚СЂРѕРєРёВ РІВ РЅРѕРјРµСЂРµВ Р·РІРѕРЅСЏС‰РµРіРѕ.
+В В В В constВ posВ =В [remoteNumber.indexOf('@10.100.40.38'),В remoteNumber.indexOf('@cms.taif.ru'),В remoteNumber.indexOf('@10.100.40.11'),В 
+В В В В remoteNumber.indexOf('@10.100.40.12'),В remoteNumber.indexOf('@cucm.taif.ru'),В remoteNumber.indexOf('@taif.loc'),В 
+В В В В remoteNumber.indexOf('@taif.ru'),В remoteNumber.indexOf('iwf@'),В remoteNumber.indexOf('@ip')];
+В В В В ifВ (DEBUG)В {
+В В В В В В console.log('callDirection:В 'В +В callDirection);
+В В В В В В console.log('callDuration:В 'В +В callDuration);
+В В В В В В console.log('callCount:В 'В +В callCount);
+В В В В В В console.log('remoteNumber:В 'В +В remoteNumber);
+В В В В В В console.log('activeLayout:В 'В +В activeLayout);
+В В В В В В //В console.log('remoteNumberВ @10.100.40.38В domainВ positionВ is:В 'В +В pos[0]);
+В В В В В В //В console.log('remoteNumberВ @cms.taif.ruВ domainВ positionВ is:В 'В +В pos[1]);
+В В В В В В //В console.log('remoteNumberВ @10.100.40.11В domainВ positionВ is:В 'В +В pos[2]);
+В В В В В В //В console.log('remoteNumberВ @10.100.40.12В domainВ positionВ is:В 'В +В pos[3]);
+В В В В В В //В console.log('remoteNumberВ @cucm.taif.ruВ domainВ positionВ is:В 'В +В pos[4]);
+В В В В В В //В console.log('remoteNumberВ @taif.locВ domainВ positionВ is:В 'В +В pos[5]);
+В В В В В В //В console.log('remoteNumberВ @taif.ruВ domainВ positionВ is:В 'В +В pos[6]);
+В В В В В В console.log('remoteNumberВ iwf@В uriВ positionВ is:В 'В +В pos[7]);
+В В В В В В console.log('remoteNumberВ @ipВ domainВ positionВ is:В 'В +В pos[8]);
+В В В В }В В 
+В В В В ifВ (callDirectionВ ==В 'Incoming')В {numConditionВ =В pos[7]}
+В В В В ifВ (callDirectionВ ==В 'Outgoing')В {numConditionВ =В pos[8]}В //В С‚.Рµ.В СЃР±СЂРѕСЃВ СЃСЂР°Р±Р°С‚С‹РІР°РµС‚В С‚РѕР»СЊРєРѕВ РїСЂРёВ РёСЃС…РѕРґСЏС‰РµРјВ Р·РІРѕРЅРєРµВ РЅР°В В ip-Р°РґСЂРµСЃ,В С‚.Рµ.В РЅР°В РЅРѕРјРµСЂ,В РіРґРµВ РїСЂРёСЃСѓС‚СЃС‚РІСѓРµС‚В @ip!
+В В В В ifВ (callCountВ ==В 1В &&В callDurationВ <=В timeoutВ &&В numConditionВ !==В -1)В {
+В В В В В В //В WhileВ Р·РґРµСЃСЊВ РїРѕС‚РѕРјСѓ,В С‡С‚РѕВ РёРЅРѕРіРґР°В СЃВ РїРµСЂРІРѕРіРѕВ СЂР°Р·Р°В РЅРµВ СЃСЂР°Р±Р°С‚С‹РІР°РµС‚.В РџСЂРѕРіСЂР°РјРјР°В Р¶РґС‘С‚В РµС‰С‘В sleepTimeВ СЃРµРєСѓРЅРґВ РёВ РїРѕРІС‚РѕСЂСЏРµС‚В СЃР±СЂРѕСЃВ РїСЂРµР·РµРЅС‚Р°С†РёРё.
+В В В В В В whileВ (iВ <=В index)В {
+В В В В В В В В awaitВ sleep(sleepTime);В //В Р–РґС‘РјВ sleepTimeВ СЃРµРєСѓРЅРґВ РїРѕСЃР»РµВ СЃРѕР±С‹С‚РёСЏВ РёР·РјРµРЅРµРЅРёСЏВ РєРѕРјРїРѕРЅРѕРІРєРёВ (ActiveLayout),В С‚.Рє.В СЃСЂР°Р·СѓВ РјРѕР¶РµС‚В РЅРµВ СЃСЂР°Р±РѕС‚Р°С‚СЊ.
+В В В В В В В В awaitВ xapi.Status.Video.Layout.CurrentLayouts.ActiveLayout.get()
+В В В В В В В В .thenВ ((activeLayout)В =>В {ifВ (activeLayoutВ !==В '')В {StartStopPres();}})В В В В В 
+В В В В В В В В i++;
+В В В В В В }
+В В В В }
+В В })
+В В .catch(console.log);
 }
-  
+В В 
 /**
- * Отличие H323 звонка от SIP звонка, с точки зрения кодека, в том, что при H323 звонке сразу появляется нежелательная презентация.
- * Следовательно, меняется/появляется статус компоновки (ActiveLayout) этой презентации.
- */
-xapi.status.on('Video Layout CurrentLayouts ActiveLayout', CorrectScreen);
+В *В РћС‚Р»РёС‡РёРµВ H323В Р·РІРѕРЅРєР°В РѕС‚В SIPВ Р·РІРѕРЅРєР°,В СЃВ С‚РѕС‡РєРёВ Р·СЂРµРЅРёСЏВ РєРѕРґРµРєР°,В РІВ С‚РѕРј,В С‡С‚РѕВ РїСЂРёВ H323В Р·РІРѕРЅРєРµВ СЃСЂР°Р·СѓВ РїРѕСЏРІР»СЏРµС‚СЃСЏВ РЅРµР¶РµР»Р°С‚РµР»СЊРЅР°СЏВ РїСЂРµР·РµРЅС‚Р°С†РёСЏ.
+В *В РЎР»РµРґРѕРІР°С‚РµР»СЊРЅРѕ,В РјРµРЅСЏРµС‚СЃСЏ/РїРѕСЏРІР»СЏРµС‚СЃСЏВ СЃС‚Р°С‚СѓСЃВ РєРѕРјРїРѕРЅРѕРІРєРёВ (ActiveLayout)В СЌС‚РѕР№В РїСЂРµР·РµРЅС‚Р°С†РёРё.
+В */
+xapi.status.on('VideoВ LayoutВ CurrentLayoutsВ ActiveLayout',В CorrectScreen);
